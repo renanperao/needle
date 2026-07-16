@@ -25,7 +25,7 @@ export function LoginScreen() {
   };
 
   return (
-    <main className="grid min-h-screen place-items-center bg-ink px-5 text-zinc-200">
+    <main className="grid min-h-dvh place-items-center bg-ink px-5 py-8 text-zinc-200">
       <div className="w-full max-w-[380px]">
         <div className="mb-8 flex items-center justify-center gap-3.5" aria-label="Needle by Pine Collective">
           <Image src="/brand/fav-icon.png" alt="" width={30} height={46} priority className="h-[46px] w-[30px] object-contain" />
@@ -47,7 +47,7 @@ export function LoginScreen() {
               required
               value={email}
               onChange={(e) => { setEmail(e.target.value); if (error) setError(null); }}
-              className="h-12 w-full rounded-lg border border-line bg-[#111613] px-3.5 text-[15px] text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-pine focus:ring-2 focus:ring-pine/20"
+              className="h-12 w-full rounded-lg border border-line bg-[#111613] px-3.5 text-[16px] text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-pine focus:ring-2 focus:ring-pine/20 md:text-[15px]"
               placeholder="voce@exemplo.com"
             />
           </label>
@@ -60,7 +60,7 @@ export function LoginScreen() {
               required
               value={password}
               onChange={(e) => { setPassword(e.target.value); if (error) setError(null); }}
-              className="h-12 w-full rounded-lg border border-line bg-[#111613] px-3.5 text-[15px] text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-pine focus:ring-2 focus:ring-pine/20"
+              className="h-12 w-full rounded-lg border border-line bg-[#111613] px-3.5 text-[16px] text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-pine focus:ring-2 focus:ring-pine/20 md:text-[15px]"
               placeholder="••••••••"
             />
           </label>

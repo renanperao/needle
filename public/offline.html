@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0d0c" />
+    <title>Needle — sem conexão</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
+        background: #0a0d0c;
+        color: #eef1ef;
+        font-family: Inter, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        text-align: center;
+      }
+      img { width: 30px; height: 46px; object-fit: contain; opacity: .9; }
+      h1 { margin: 22px 0 0; font-size: 17px; font-weight: 500; }
+      p { margin: 10px 0 0; font-size: 14px; color: #8b8f8c; line-height: 1.5; }
+      button {
+        margin-top: 26px;
+        height: 44px;
+        padding: 0 20px;
+        border: 0;
+        border-radius: 8px;
+        background: #315c49;
+        color: #fff;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      button:hover { background: #3a6b56; }
+    </style>
+  </head>
+  <body>
+    <div>
+      <img src="/brand/fav-icon.png" alt="" />
+      <h1>Sem conexão</h1>
+      <p>O Needle precisa de internet para carregar suas demandas.<br />Verifique a rede e tente de novo.</p>
+      <button type="button" onclick="location.reload()">Tentar novamente</button>
+    </div>
+  </body>
+</html>

@@ -5,12 +5,18 @@
 :root { color-scheme: dark; }
 * { box-sizing: border-box; }
 html, body { min-height: 100%; }
+html {
+  /* Impede o iOS de reescalar o texto ao girar o aparelho. */
+  -webkit-text-size-adjust: 100%;
+}
 body {
   margin: 0;
   background: #0a0d0c;
   color: #eef1ef;
   font-family: "Inter Variable", Inter, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Sem pull-to-refresh acidental quando instalado na tela inicial. */
+  overscroll-behavior-y: none;
 }
 button, input { font: inherit; }
 button { cursor: pointer; }
@@ -22,4 +28,15 @@ button { cursor: pointer; }
 .task-row:hover .row-actions, .task-row:focus-within .row-actions { opacity: 1; transform: none; }
 @media (max-width: 760px) {
   .task-row .row-actions { opacity: 1; transform: none; }
+}
+
+/* Fora da tela, a sidebar não pode continuar recebendo foco nem leitura de
+   screen reader. A visibilidade só cai depois do slide para não cortar a animação. */
+@media (max-width: 767px) {
+  .sidebar[data-open="false"] {
+    visibility: hidden;
+    transition-property: transform, visibility;
+    transition-duration: 150ms, 0s;
+    transition-delay: 0s, 150ms;
+  }
 }

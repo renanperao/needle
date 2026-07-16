@@ -254,7 +254,7 @@ export function NeedleApp() {
 
   if (!supabaseConfigured) {
     return (
-      <main className="grid min-h-screen place-items-center bg-ink px-6 text-center text-zinc-300">
+      <main className="grid min-h-dvh place-items-center bg-ink px-6 text-center text-zinc-300">
         <div className="max-w-md">
           <p className="text-[17px] text-white">Configuração do Supabase ausente</p>
           <p className="mt-2 text-[14px] text-zinc-500">Defina <span className="mono">NEXT_PUBLIC_SUPABASE_URL</span> e <span className="mono">NEXT_PUBLIC_SUPABASE_ANON_KEY</span> no ambiente (Vercel) e reimplante.</p>
@@ -263,24 +263,25 @@ export function NeedleApp() {
     );
   }
   if (!authReady) {
-    return <main className="grid min-h-screen place-items-center bg-ink"><Loader2 className="animate-spin text-moss" size={22} /></main>;
+    return <main className="grid min-h-dvh place-items-center bg-ink"><Loader2 className="animate-spin text-moss" size={22} /></main>;
   }
   if (!session) return <LoginScreen />;
 
   return (
-    <main className="min-h-screen bg-ink text-zinc-200">
+    <main className="min-h-dvh bg-ink text-zinc-200">
       {mobileNav && <button aria-label="Fechar menu" className="fixed inset-0 z-30 bg-black/60 md:hidden" onClick={() => setMobileNav(false)} />}
       <Sidebar active={active} setActive={(id) => { setActive(id); setMobileNav(false); }} open={mobileNav} email={session.user.email ?? null} onSignOut={signOut} />
       {selectedTask && <TaskDetails key={selectedTask.id} task={selectedTask} onClose={() => setSelectedTaskId(null)} onSave={updateTask} onDelete={deleteTask} />}
 
-      <section className="min-h-screen md:ml-[264px]">
-        <header className="sticky top-0 z-20 border-b border-line bg-ink/90 px-5 py-5 backdrop-blur-xl md:px-10">
+      <section className="min-h-dvh md:ml-[264px]">
+        <header className="sticky top-0 z-20 border-b border-line bg-ink/90 px-5 pb-5 pt-[calc(1.25rem+env(safe-area-inset-top))] backdrop-blur-xl md:px-10">
           <div className="mx-auto flex max-w-[1440px] items-center gap-3">
-            <button className="grid h-10 w-10 place-items-center rounded-lg border border-line md:hidden" onClick={() => setMobileNav(true)}><MoreHorizontal size={18} /></button>
-            <form onSubmit={createTask} className="group relative flex h-14 flex-1 items-center rounded-xl border border-line bg-[#0d110f] px-4 transition focus-within:border-pine focus-within:ring-2 focus-within:ring-pine/20">
-              <Plus size={19} className="mr-3.5 text-moss" />
-              <input value={quickTask} onChange={(e) => { setQuickTask(e.target.value); if (quickError) setQuickError(null); }} className="min-w-0 flex-1 bg-transparent text-[15px] text-zinc-100 outline-none placeholder:text-zinc-500" placeholder={active === "all" && !quickWorkspace ? "Escolha um espaço e descreva a demanda..." : "Criar nova demanda... use #Alta para definir prioridade"} />
-              {active === "all" && <div ref={workspacePickerRef} className="relative mr-2 border-l border-line pl-2 sm:mr-3 sm:pl-3">
+            <button className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-line md:hidden" onClick={() => setMobileNav(true)}><MoreHorizontal size={18} /></button>
+            {/* min-w-0: sem isso o min-width:auto do item flex trava o form no tamanho natural do input e estoura a tela. */}
+            <form onSubmit={createTask} className="group relative flex h-14 min-w-0 flex-1 items-center rounded-xl border border-line bg-[#0d110f] px-4 transition focus-within:border-pine focus-within:ring-2 focus-within:ring-pine/20">
+              <Plus size={19} className="mr-3.5 shrink-0 text-moss" />
+              <input value={quickTask} onChange={(e) => { setQuickTask(e.target.value); if (quickError) setQuickError(null); }} className="min-w-0 flex-1 bg-transparent text-[16px] text-zinc-100 outline-none placeholder:text-zinc-500 md:text-[15px]" placeholder={active === "all" && !quickWorkspace ? "Escolha um espaço e descreva a demanda..." : "Criar nova demanda... use #Alta para definir prioridade"} />
+              {active === "all" && <div ref={workspacePickerRef} className="relative mr-2 shrink-0 border-l border-line pl-2 sm:mr-3 sm:pl-3">
                 <button
                   type="button"
                   aria-haspopup="listbox"
@@ -319,7 +320,7 @@ export function NeedleApp() {
           </div>
         </header>
 
-        <div className="mx-auto max-w-[1480px] px-5 py-9 md:px-10 md:py-12">
+        <div className="mx-auto max-w-[1480px] px-5 pb-[calc(2.25rem+env(safe-area-inset-bottom))] pt-9 md:px-10 md:pb-[calc(3rem+env(safe-area-inset-bottom))] md:pt-12">
           <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
             <div>
               <p className="mb-2.5 flex items-center gap-2 text-[13px] font-medium uppercase tracking-[.15em] text-zinc-400">
@@ -328,10 +329,10 @@ export function NeedleApp() {
               <h1 className="text-[30px] font-medium tracking-tight text-white md:text-[36px]">{currentWorkspace?.name ?? "Visão geral"}</h1>
               <p className="mt-2.5 text-[16px] text-zinc-400">{openTaskCount} {openTaskCount === 1 ? "demanda aberta" : "demandas abertas"}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <label className="flex h-12 items-center gap-2.5 rounded-lg border border-line px-3.5 text-zinc-400 focus-within:border-zinc-500">
                 <Search size={17} />
-                <input value={query} onChange={(e) => setQuery(e.target.value)} className="w-28 bg-transparent text-[14px] text-zinc-200 outline-none placeholder:text-zinc-500 sm:w-40" placeholder="Filtrar..." />
+                <input value={query} onChange={(e) => setQuery(e.target.value)} className="w-28 bg-transparent text-[16px] text-zinc-200 outline-none placeholder:text-zinc-500 sm:w-40 md:text-[14px]" placeholder="Filtrar..." />
                 {query && <button onClick={() => setQuery("")}><X size={13} /></button>}
               </label>
               {(active === "all" || view === "list") && <div className="flex rounded-md border border-line bg-panel p-0.5">
@@ -351,8 +352,10 @@ export function NeedleApp() {
               <TaskList tasks={listTasks} showWorkspace={active === "all"} taskFilter={taskFilter} completeTask={completeTask} reopenTask={reopenTask} deleteTask={deleteTask} openTask={setSelectedTaskId} />
             </>
           ) : (
-            <div className="grid min-w-[760px] grid-cols-3 gap-4 overflow-x-auto pb-5">
-              {columns.map((column) => <KanbanColumn key={column.id} column={column} tasks={scopedTasks.filter((task) => task.columnId === column.id)} setDragging={setDragging} dropInto={dropInto} openTask={setSelectedTaskId} />)}
+            <div className="overflow-x-auto overscroll-x-contain pb-5">
+              <div className="grid min-w-[760px] grid-cols-3 gap-4">
+                {columns.map((column) => <KanbanColumn key={column.id} column={column} tasks={scopedTasks.filter((task) => task.columnId === column.id)} setDragging={setDragging} dropInto={dropInto} openTask={setSelectedTaskId} />)}
+              </div>
             </div>
           )}
         </div>
@@ -362,7 +365,7 @@ export function NeedleApp() {
 }
 
 function Sidebar({ active, setActive, open, email, onSignOut }: { active: string; setActive: (id: string) => void; open: boolean; email: string | null; onSignOut: () => void }) {
-  return <aside className={`fixed inset-y-0 left-0 z-40 flex w-[264px] flex-col border-r border-line bg-[#0c100e] transition-transform md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
+  return <aside data-open={open} className={`sidebar fixed inset-y-0 left-0 z-40 flex w-[264px] flex-col border-r border-line bg-[#0c100e] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pt-[env(safe-area-inset-top)] transition-transform md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
     <div className="flex h-[89px] items-center border-b border-line px-6">
       <div className="flex items-center gap-3.5" aria-label="Needle by Pine Collective">
         <Image src="/brand/fav-icon.png" alt="" width={30} height={46} priority className="h-[46px] w-[30px] object-contain" />
@@ -485,7 +488,7 @@ function TaskDetails({ task, onClose, onSave, onDelete }: { task: Task; onClose:
 
   return <div className="fixed inset-0 z-50">
     <button aria-label="Fechar detalhes" className="absolute inset-0 cursor-default bg-black/65 backdrop-blur-[2px]" onClick={onClose} />
-    <aside aria-label={`Detalhes de ${task.title}`} className="absolute inset-y-0 right-0 flex w-full max-w-[560px] flex-col border-l border-line bg-[#0d110f] shadow-[-24px_0_80px_rgba(0,0,0,.45)]">
+    <aside aria-label={`Detalhes de ${task.title}`} className="absolute inset-y-0 right-0 flex w-full max-w-[560px] flex-col border-l border-line bg-[#0d110f] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)] shadow-[-24px_0_80px_rgba(0,0,0,.45)]">
       <div className="flex h-[78px] shrink-0 items-center justify-between border-b border-line px-6">
         <div><p className="text-[11px] font-medium uppercase tracking-[.15em] text-zinc-500">Detalhes da demanda</p><p className="mono mt-1 text-[11px] text-zinc-600">{task.id}</p></div>
         <button aria-label="Fechar" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-lg text-zinc-400 transition hover:bg-white/[.06] hover:text-white"><X size={18} /></button>
@@ -495,19 +498,19 @@ function TaskDetails({ task, onClose, onSave, onDelete }: { task: Task; onClose:
         <div className="flex-1 space-y-7 overflow-y-auto px-6 py-7">
           <label className="block">
             <span className="mb-2.5 block text-[12px] font-medium text-zinc-400">Título</span>
-            <input autoFocus value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} className="h-12 w-full rounded-lg border border-line bg-[#111613] px-3.5 text-[15px] text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-pine focus:ring-2 focus:ring-pine/20" />
+            <input autoFocus value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} className="h-12 w-full rounded-lg border border-line bg-[#111613] px-3.5 text-[16px] text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-pine focus:ring-2 focus:ring-pine/20 md:text-[15px]" />
           </label>
 
           <label className="block">
             <span className="mb-2.5 flex items-center gap-2 text-[12px] font-medium text-zinc-400"><AlignLeft size={14} />Descrição</span>
-            <textarea value={draft.description ?? ""} onChange={(event) => setDraft({ ...draft, description: event.target.value })} rows={5} placeholder="Adicione contexto, links ou critérios para concluir..." className="w-full resize-none rounded-lg border border-line bg-[#111613] px-3.5 py-3 text-[14px] leading-6 text-zinc-200 outline-none transition placeholder:text-zinc-600 focus:border-pine focus:ring-2 focus:ring-pine/20" />
+            <textarea value={draft.description ?? ""} onChange={(event) => setDraft({ ...draft, description: event.target.value })} rows={5} placeholder="Adicione contexto, links ou critérios para concluir..." className="w-full resize-none rounded-lg border border-line bg-[#111613] px-3.5 py-3 text-[16px] leading-6 text-zinc-200 outline-none transition placeholder:text-zinc-600 focus:border-pine focus:ring-2 focus:ring-pine/20 md:text-[14px]" />
           </label>
 
           <div className="grid gap-5 sm:grid-cols-2">
             <label className="block">
               <span className="mb-2.5 block text-[12px] font-medium text-zinc-400">Workspace</span>
               <div className="relative">
-                <select value={draft.workspaceId} onChange={(event) => setDraft({ ...draft, workspaceId: event.target.value, columnId: `${event.target.value}-todo`, completed: false })} className="h-12 w-full appearance-none rounded-lg border border-line bg-[#111613] px-3.5 pr-9 text-[14px] text-zinc-200 outline-none transition focus:border-pine focus:ring-2 focus:ring-pine/20 [&>option]:bg-[#111613]">
+                <select value={draft.workspaceId} onChange={(event) => setDraft({ ...draft, workspaceId: event.target.value, columnId: `${event.target.value}-todo`, completed: false })} className="h-12 w-full appearance-none rounded-lg border border-line bg-[#111613] px-3.5 pr-9 text-[16px] text-zinc-200 outline-none transition focus:border-pine focus:ring-2 focus:ring-pine/20 md:text-[14px] [&>option]:bg-[#111613]">
                   {workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}
                 </select>
                 <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
@@ -517,7 +520,7 @@ function TaskDetails({ task, onClose, onSave, onDelete }: { task: Task; onClose:
             <label className="block">
               <span className="mb-2.5 block text-[12px] font-medium text-zinc-400">Etapa</span>
               <div className="relative">
-                <select value={draft.columnId} onChange={(event) => { const column = initialColumns.find((item) => item.id === event.target.value); setDraft({ ...draft, columnId: event.target.value, completed: column?.name === "Concluído" }); }} className="h-12 w-full appearance-none rounded-lg border border-line bg-[#111613] px-3.5 pr-9 text-[14px] text-zinc-200 outline-none transition focus:border-pine focus:ring-2 focus:ring-pine/20 [&>option]:bg-[#111613]">
+                <select value={draft.columnId} onChange={(event) => { const column = initialColumns.find((item) => item.id === event.target.value); setDraft({ ...draft, columnId: event.target.value, completed: column?.name === "Concluído" }); }} className="h-12 w-full appearance-none rounded-lg border border-line bg-[#111613] px-3.5 pr-9 text-[16px] text-zinc-200 outline-none transition focus:border-pine focus:ring-2 focus:ring-pine/20 md:text-[14px] [&>option]:bg-[#111613]">
                   {availableColumns.map((column) => <option key={column.id} value={column.id}>{column.name}</option>)}
                 </select>
                 <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
@@ -527,7 +530,7 @@ function TaskDetails({ task, onClose, onSave, onDelete }: { task: Task; onClose:
             <label className="block">
               <span className="mb-2.5 flex items-center gap-2 text-[12px] font-medium text-zinc-400"><Flag size={14} />Prioridade</span>
               <div className="relative">
-                <select value={draft.priority} onChange={(event) => setDraft({ ...draft, priority: event.target.value as Priority })} className="h-12 w-full appearance-none rounded-lg border border-line bg-[#111613] px-3.5 pr-9 text-[14px] text-zinc-200 outline-none transition focus:border-pine focus:ring-2 focus:ring-pine/20 [&>option]:bg-[#111613]">
+                <select value={draft.priority} onChange={(event) => setDraft({ ...draft, priority: event.target.value as Priority })} className="h-12 w-full appearance-none rounded-lg border border-line bg-[#111613] px-3.5 pr-9 text-[16px] text-zinc-200 outline-none transition focus:border-pine focus:ring-2 focus:ring-pine/20 md:text-[14px] [&>option]:bg-[#111613]">
                   <option value="Alta">Alta</option><option value="Média">Média</option><option value="Baixa">Baixa</option>
                 </select>
                 <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
@@ -536,7 +539,7 @@ function TaskDetails({ task, onClose, onSave, onDelete }: { task: Task; onClose:
 
             <label className="block">
               <span className="mb-2.5 flex items-center gap-2 text-[12px] font-medium text-zinc-400"><CalendarDays size={14} />Prazo</span>
-              <input type="date" value={draft.due ?? ""} onChange={(event) => setDraft({ ...draft, due: event.target.value || undefined })} className="h-12 w-full rounded-lg border border-line bg-[#111613] px-3.5 text-[14px] text-zinc-200 outline-none transition focus:border-pine focus:ring-2 focus:ring-pine/20" />
+              <input type="date" value={draft.due ?? ""} onChange={(event) => setDraft({ ...draft, due: event.target.value || undefined })} className="h-12 w-full rounded-lg border border-line bg-[#111613] px-3.5 text-[16px] text-zinc-200 outline-none transition focus:border-pine focus:ring-2 focus:ring-pine/20 md:text-[14px]" />
               {draft.due && <button type="button" onClick={() => setDraft({ ...draft, due: undefined })} className="mt-2 text-[12px] text-zinc-500 transition hover:text-zinc-300">Remover prazo</button>}
             </label>
           </div>
@@ -546,7 +549,7 @@ function TaskDetails({ task, onClose, onSave, onDelete }: { task: Task; onClose:
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-line bg-[#0d110f] px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-line bg-[#0d110f] px-6 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4">
           <p className="hidden text-[12px] text-zinc-600 sm:block">As alterações só são aplicadas ao salvar.</p>
           <div className="ml-auto flex gap-2">
             <button type="button" onClick={onClose} className="h-11 rounded-lg px-4 text-[13px] text-zinc-400 transition hover:bg-white/[.05] hover:text-white">Cancelar</button>
