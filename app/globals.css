@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background: #0a0d0c;
+  color: #eef1ef;
+  font-family: "Inter Variable", Inter, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button, input { font: inherit; }
+button { cursor: pointer; }
+::selection { background: #315e4b; color: white; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #29302c; border-radius: 999px; }
+.mono { font-family: "Geist Mono Variable", monospace; }
+.task-row .row-actions { opacity: 0; transform: translateX(4px); }
+.task-row:hover .row-actions, .task-row:focus-within .row-actions { opacity: 1; transform: none; }
+@media (max-width: 760px) {
+  .task-row .row-actions { opacity: 1; transform: none; }
+}
