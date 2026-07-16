@@ -17,16 +17,6 @@ type Task = {
   description?: string; priority: Priority; due?: string; completed?: boolean;
 };
 
-function localDate(offset = 0) {
-  const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() + offset);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function formatDueDate(value?: string) {
   if (!value) return "Sem prazo";
   const due = new Date(`${value}T12:00:00`);
@@ -60,14 +50,8 @@ const initialColumns: Column[] = workspaces.flatMap((w) => [
   { id: `${w.id}-done`, workspaceId: w.id, name: "Concluído" },
 ]);
 
-const initialTasks: Task[] = [
-  { id: "NDL-104", workspaceId: "brasil", columnId: "brasil-todo", title: "Revisar planejamento da campanha de julho", description: "Conferir metas, responsáveis e orçamento antes da aprovação.", priority: "Alta", due: localDate() },
-  { id: "NDL-103", workspaceId: "binding", columnId: "binding-progress", title: "Validar nova estrutura do banco de dados", priority: "Alta", due: localDate() },
-  { id: "NDL-102", workspaceId: "pine", columnId: "pine-todo", title: "Preparar pauta para reunião semanal", priority: "Média", due: localDate(1) },
-  { id: "NDL-101", workspaceId: "brasil", columnId: "brasil-progress", title: "Finalizar apresentação para parceiros", priority: "Média", due: localDate(3) },
-  { id: "NDL-100", workspaceId: "pessoal", columnId: "pessoal-todo", title: "Agendar consulta anual", priority: "Baixa", due: localDate(7) },
-  { id: "NDL-099", workspaceId: "binding", columnId: "binding-todo", title: "Mapear referências para o novo produto", priority: "Baixa" },
-];
+// Sem tarefas de demonstração — o app começa vazio para uso real.
+const initialTasks: Task[] = [];
 
 const priorityStyle: Record<Priority, string> = {
   Alta: "bg-red-400", Média: "bg-amber-300", Baixa: "bg-zinc-500",
@@ -117,7 +101,7 @@ export function NeedleApp() {
   useEffect(() => {
     const remembered = window.localStorage.getItem("needle:last-workspace");
     if (remembered && workspaces.some((workspace) => workspace.id === remembered)) setQuickWorkspace(remembered);
-    const stored = window.localStorage.getItem("needle:tasks");
+    const stored = window.localStorage.getItem("needle:tasks:v2");
     if (stored) {
       try {
         const parsed = JSON.parse(stored) as Task[];
@@ -131,7 +115,7 @@ export function NeedleApp() {
 
   useEffect(() => {
     if (!hydrated) return;
-    window.localStorage.setItem("needle:tasks", JSON.stringify(tasks));
+    window.localStorage.setItem("needle:tasks:v2", JSON.stringify(tasks));
   }, [tasks, hydrated]);
 
   useEffect(() => {
