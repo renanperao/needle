@@ -34,3 +34,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude code — config pessoal e symlinks de skills (regeneraveis)
+.claude/settings.local.json
+.claude/skills/
+
+# agent skills — conteudo restauravel via `npx skills install` (skills-lock.json e' versionado)
+.agents/
