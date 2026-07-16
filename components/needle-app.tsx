@@ -4,18 +4,17 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import {
   AlignLeft, CalendarDays, Check, ChevronDown, Circle, Columns3, Flag, Hash,
-  Inbox, LayoutList, MoreHorizontal, Plus, RotateCcw, Save, Search, Trash2, X,
+  Inbox, LayoutList, Loader2, LogOut, MoreHorizontal, Plus, RotateCcw, Save, Search, Trash2, X,
 } from "lucide-react";
+import type { Session } from "@supabase/supabase-js";
+import { supabaseConfigured, getSupabase } from "@/lib/supabase";
+import { type Task, type Priority, fetchTasks, insertTask, saveTask, removeTask } from "@/lib/tasks";
+import { LoginScreen } from "./login-screen";
 
-type Priority = "Alta" | "Média" | "Baixa";
 type View = "list" | "board";
 type TaskFilter = "open" | "completed";
 type Workspace = { id: string; name: string; color: string };
 type Column = { id: string; workspaceId: string; name: string };
-type Task = {
-  id: string; workspaceId: string; columnId: string; title: string;
-  description?: string; priority: Priority; due?: string; completed?: boolean;
-};
 
 function formatDueDate(value?: string) {
   if (!value) return "Sem prazo";
@@ -50,9 +49,6 @@ const initialColumns: Column[] = workspaces.flatMap((w) => [
   { id: `${w.id}-done`, workspaceId: w.id, name: "Concluído" },
 ]);
 
-// Sem tarefas de demonstração — o app começa vazio para uso real.
-const initialTasks: Task[] = [];
-
 const priorityStyle: Record<Priority, string> = {
   Alta: "bg-red-400", Média: "bg-amber-300", Baixa: "bg-zinc-500",
 };
@@ -65,8 +61,9 @@ export function NeedleApp() {
   const [active, setActive] = useState("all");
   const [view, setView] = useState<View>("list");
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("open");
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [hydrated, setHydrated] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [query, setQuery] = useState("");
   const [quickTask, setQuickTask] = useState("");
   const [quickWorkspace, setQuickWorkspace] = useState("");
@@ -101,22 +98,27 @@ export function NeedleApp() {
   useEffect(() => {
     const remembered = window.localStorage.getItem("needle:last-workspace");
     if (remembered && workspaces.some((workspace) => workspace.id === remembered)) setQuickWorkspace(remembered);
-    const stored = window.localStorage.getItem("needle:tasks:v2");
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as Task[];
-        if (Array.isArray(parsed)) setTasks(parsed);
-      } catch {
-        // ignora estado corrompido e mantém o seed inicial
-      }
-    }
-    setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
-    window.localStorage.setItem("needle:tasks:v2", JSON.stringify(tasks));
-  }, [tasks, hydrated]);
+    if (!supabaseConfigured) { setAuthReady(true); return; }
+    const supabase = getSupabase();
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setAuthReady(true);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!session) { setTasks([]); return; }
+    let cancelled = false;
+    fetchTasks()
+      .then((rows) => { if (!cancelled) setTasks(rows); })
+      .catch((error) => console.error("Falha ao carregar demandas", error));
+    return () => { cancelled = true; };
+  }, [session]);
 
   useEffect(() => {
     const navigate = (event: globalThis.KeyboardEvent) => {
@@ -148,7 +150,9 @@ export function NeedleApp() {
     };
   }, [workspacePickerOpen]);
 
-  const createTask = (event: FormEvent) => {
+  const reload = () => fetchTasks().then(setTasks).catch((error) => console.error(error));
+
+  const createTask = async (event: FormEvent) => {
     event.preventDefault();
     const raw = quickTask.trim();
     if (!raw) return;
@@ -182,48 +186,91 @@ export function NeedleApp() {
       return;
     }
 
-    setTasks((items) => {
-      const highest = items.reduce((max, item) => {
-        const value = Number.parseInt(item.id.replace(/\D/g, ""), 10);
-        return Number.isFinite(value) ? Math.max(max, value) : max;
-      }, 100);
-      const newTask: Task = { id: `NDL-${highest + 1}`, workspaceId, columnId: `${workspaceId}-todo`, title, priority };
-      return [newTask, ...items];
-    });
+    const highest = tasks.reduce((max, item) => {
+      const value = Number.parseInt(item.id.replace(/\D/g, ""), 10);
+      return Number.isFinite(value) ? Math.max(max, value) : max;
+    }, 100);
+    const newTask: Task = { id: `NDL-${highest + 1}`, workspaceId, columnId: `${workspaceId}-todo`, title, priority };
 
+    setTasks((items) => [newTask, ...items]);
     window.localStorage.setItem("needle:last-workspace", workspaceId);
     setQuickWorkspace(workspaceId);
     setQuickTask("");
     setQuickError(null);
+
+    try {
+      await insertTask(newTask);
+    } catch (error) {
+      console.error(error);
+      window.alert("Não foi possível salvar a demanda.");
+      reload();
+    }
   };
 
-  const completeTask = (id: string) => setTasks((items) => items.map((task) =>
-    task.id === id ? { ...task, completed: true, columnId: `${task.workspaceId}-done` } : task));
-  const reopenTask = (id: string) => setTasks((items) => items.map((task) =>
-    task.id === id ? { ...task, completed: false, columnId: `${task.workspaceId}-todo` } : task));
-  const deleteTask = (id: string) => {
+  const persist = async (updated: Task, message: string) => {
+    setTasks((items) => items.map((task) => (task.id === updated.id ? updated : task)));
+    try {
+      await saveTask(updated);
+    } catch (error) {
+      console.error(error);
+      window.alert(message);
+      reload();
+    }
+  };
+
+  const completeTask = (id: string) => {
+    const task = tasks.find((item) => item.id === id);
+    if (task) persist({ ...task, completed: true, columnId: `${task.workspaceId}-done` }, "Não foi possível concluir a demanda.");
+  };
+  const reopenTask = (id: string) => {
+    const task = tasks.find((item) => item.id === id);
+    if (task) persist({ ...task, completed: false, columnId: `${task.workspaceId}-todo` }, "Não foi possível reabrir a demanda.");
+  };
+  const deleteTask = async (id: string) => {
     setTasks((items) => items.filter((task) => task.id !== id));
     if (selectedTaskId === id) setSelectedTaskId(null);
+    try {
+      await removeTask(id);
+    } catch (error) {
+      console.error(error);
+      window.alert("Não foi possível excluir a demanda.");
+      reload();
+    }
   };
   const updateTask = (updatedTask: Task) => {
-    setTasks((items) => items.map((task) => task.id === updatedTask.id ? updatedTask : task));
+    persist(updatedTask, "Não foi possível salvar as alterações.");
     setSelectedTaskId(null);
   };
   const dropInto = (columnId: string) => {
     if (!dragging) return;
-    const destination = initialColumns.find((column) => column.id === columnId);
-    setTasks((items) => items.map((task) => task.id === dragging ? {
-      ...task,
-      columnId,
-      completed: destination?.name === "Concluído",
-    } : task));
+    const id = dragging;
     setDragging(null);
+    const destination = initialColumns.find((column) => column.id === columnId);
+    const task = tasks.find((item) => item.id === id);
+    if (task) persist({ ...task, columnId, completed: destination?.name === "Concluído" }, "Não foi possível mover a demanda.");
   };
+
+  const signOut = () => { getSupabase().auth.signOut(); };
+
+  if (!supabaseConfigured) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-ink px-6 text-center text-zinc-300">
+        <div className="max-w-md">
+          <p className="text-[17px] text-white">Configuração do Supabase ausente</p>
+          <p className="mt-2 text-[14px] text-zinc-500">Defina <span className="mono">NEXT_PUBLIC_SUPABASE_URL</span> e <span className="mono">NEXT_PUBLIC_SUPABASE_ANON_KEY</span> no ambiente (Vercel) e reimplante.</p>
+        </div>
+      </main>
+    );
+  }
+  if (!authReady) {
+    return <main className="grid min-h-screen place-items-center bg-ink"><Loader2 className="animate-spin text-moss" size={22} /></main>;
+  }
+  if (!session) return <LoginScreen />;
 
   return (
     <main className="min-h-screen bg-ink text-zinc-200">
       {mobileNav && <button aria-label="Fechar menu" className="fixed inset-0 z-30 bg-black/60 md:hidden" onClick={() => setMobileNav(false)} />}
-      <Sidebar active={active} setActive={(id) => { setActive(id); setMobileNav(false); }} open={mobileNav} />
+      <Sidebar active={active} setActive={(id) => { setActive(id); setMobileNav(false); }} open={mobileNav} email={session.user.email ?? null} onSignOut={signOut} />
       {selectedTask && <TaskDetails key={selectedTask.id} task={selectedTask} onClose={() => setSelectedTaskId(null)} onSave={updateTask} onDelete={deleteTask} />}
 
       <section className="min-h-screen md:ml-[264px]">
@@ -314,7 +361,7 @@ export function NeedleApp() {
   );
 }
 
-function Sidebar({ active, setActive, open }: { active: string; setActive: (id: string) => void; open: boolean }) {
+function Sidebar({ active, setActive, open, email, onSignOut }: { active: string; setActive: (id: string) => void; open: boolean; email: string | null; onSignOut: () => void }) {
   return <aside className={`fixed inset-y-0 left-0 z-40 flex w-[264px] flex-col border-r border-line bg-[#0c100e] transition-transform md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
     <div className="flex h-[89px] items-center border-b border-line px-6">
       <div className="flex items-center gap-3.5" aria-label="Needle by Pine Collective">
@@ -335,8 +382,9 @@ function Sidebar({ active, setActive, open }: { active: string; setActive: (id: 
     </nav>
     <div className="border-t border-line p-5">
       <div className="flex items-center gap-3 rounded-lg px-2 py-2">
-        <div className="grid h-8 w-8 place-items-center rounded-full bg-pine text-xs font-semibold text-moss">RS</div>
-        <div className="min-w-0 flex-1"><p className="truncate text-[14px] font-medium text-zinc-200">Renan Silva</p><p className="mt-1 text-[12px] text-zinc-500">Pine Collective</p></div>
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-pine text-xs font-semibold uppercase text-moss">{(email?.[0] ?? "?").toUpperCase()}</div>
+        <div className="min-w-0 flex-1"><p className="truncate text-[14px] font-medium text-zinc-200">{email ?? "Sessão"}</p><p className="mt-1 text-[12px] text-zinc-500">Pine Collective</p></div>
+        <button aria-label="Sair" title="Sair" onClick={onSignOut} className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-zinc-500 transition hover:bg-white/[.06] hover:text-white"><LogOut size={15} /></button>
       </div>
     </div>
   </aside>;
